@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Wodsoft.QuicRpc.SourceGenerators/Wodsoft.QuicRpc.SourceGenerators.csproj" />
+    <Project Path="src/Wodsoft.QuicRpc/Wodsoft.QuicRpc.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Wodsoft.QuicRpc.Benchmarks/Wodsoft.QuicRpc.Benchmarks.csproj" />
+    <Project Path="test/Wodsoft.QuicRpc.BenchmarkServer/Wodsoft.QuicRpc.BenchmarkServer.csproj" />
+    <Project Path="test/Wodsoft.QuicRpc.UnitTest/Wodsoft.QuicRpc.UnitTest.csproj" />
+  </Folder>
+  <Folder Name="/解决方案项/">
+    <File Path="README.md" />
+  </Folder>
+</Solution>

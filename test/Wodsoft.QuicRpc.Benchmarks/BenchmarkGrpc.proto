@@ -1,0 +1,9 @@
+﻿syntax = "proto3";
+
+service BenchmarkGrpc {
+  rpc Test (Hello) returns (Hello);
+}
+
+message Hello {
+  string name = 1;
+}
