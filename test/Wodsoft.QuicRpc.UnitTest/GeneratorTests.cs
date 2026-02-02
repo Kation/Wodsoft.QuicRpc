@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
+#pragma warning disable CA1416 // 验证平台兼容性
 namespace Wodsoft.QuicRpc.UnitTest
 {
     public class GeneratorTests : QuicRpcTests, IClassFixture<CertificateContext>
