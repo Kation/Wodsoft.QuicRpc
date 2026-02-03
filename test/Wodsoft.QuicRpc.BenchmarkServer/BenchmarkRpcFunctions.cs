@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,10 +9,10 @@ namespace Wodsoft.QuicRpc.BenchmarkServer
     [QuicRpcFunction(0)]
     public partial class BenchmarkRpcFunctions : QuicRpcFunctions
     {
-        [QuicRpcFunction(0)]
-        public ValueTask<string> BothWithParameter(string request)
+        [QuicRpcFunction(3)]
+        public ValueTask Empty()
         {
-            return ValueTask.FromResult(request);
+            return ValueTask.CompletedTask;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
 {
     public class BenchmarkGrpcService : BenchmarkGrpc.BenchmarkGrpcBase
     {
-        public override Task<Hello> Test(Hello request, ServerCallContext context)
+        public override Task<Empty> Empty(Empty request, ServerCallContext context)
         {
             return Task.FromResult(request);
         }

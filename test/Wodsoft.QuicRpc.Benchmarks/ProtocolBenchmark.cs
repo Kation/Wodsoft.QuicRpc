@@ -30,7 +30,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
 {
     [CPUUsageDiagnoser]
     [MemoryDiagnoser]
-    public class NetworkBenchmark
+    public class ProtocolBenchmark
     {
         private QuicRpcService<BenchmarkRpcContext> _quicRpcService;
         private BenchmarkRpcClient _quicRpcClient;
@@ -44,8 +44,8 @@ namespace Wodsoft.QuicRpc.Benchmarks
 
         public IEnumerable<object[]> Parameters()
         {
-            //yield return new object[] { 100, 1 };
-            //yield return new object[] { 100, 8 };
+            yield return new object[] { 1000, 1 };
+            yield return new object[] { 1000, 8 };
             yield return new object[] { 5000, 8 };
             yield return new object[] { 5000, 16 };
             yield return new object[] { 5000, 32 };
@@ -110,69 +110,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
             });
             _quicRpcClient = new BenchmarkRpcClient();
             _quicRpcService.BindClient(_quicRpcClientConnection, ref _quicRpcClient);
-            await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (_, _) => await _quicRpcClient.Test3(new Hello2 { Name = "Hi" }));
-        }
-
-        [GlobalSetup(Target = "QuicRpcWithProtobuf")]
-        public async Task GlobalSetupQuicRpcWithProtobuf()
-        {
-            _cts = new CancellationTokenSource();
-
-            _quicRpcService = new QuicRpcService<BenchmarkRpcContext>(new ProtobufQuicRpcSerializer());
-            _quicRpcService.BindFunctions(new BenchmarkRpcFunctions());
-
-            _listener = await QuicListener.ListenAsync(new QuicListenerOptions
-            {
-                ApplicationProtocols = [SslApplicationProtocol.Http3],
-                ConnectionOptionsCallback = (connection, helloInfo, _) =>
-                {
-                    QuicServerConnectionOptions options = new QuicServerConnectionOptions
-                    {
-                        ServerAuthenticationOptions = new SslServerAuthenticationOptions
-                        {
-                            ServerCertificate = CertificateHelper.ServerCertificate,
-                            ApplicationProtocols = [SslApplicationProtocol.Http3],
-                            EnabledSslProtocols = SslProtocols.Tls13,
-                            ClientCertificateRequired = true,
-                            RemoteCertificateValidationCallback = (_, _, _, _) => true
-                        },
-                        DefaultCloseErrorCode = 0,
-                        DefaultStreamErrorCode = 0,
-                        MaxInboundBidirectionalStreams = 1024,
-                        MaxInboundUnidirectionalStreams = 128,
-                        IdleTimeout = TimeSpan.FromMinutes(10),
-                        KeepAliveInterval = TimeSpan.FromMinutes(1)
-                    };
-                    return ValueTask.FromResult(options);
-                },
-                ListenEndPoint = new IPEndPoint(IPAddress.Loopback, 0)
-            });
-            _serverTask = QuicRpcServerConnectionHandle(_listener, _cts.Token);
-
-            _quicRpcClientConnection = await QuicConnection.ConnectAsync(new QuicClientConnectionOptions
-            {
-                RemoteEndPoint = _listener.LocalEndPoint,
-                ClientAuthenticationOptions = new SslClientAuthenticationOptions
-                {
-                    RemoteCertificateValidationCallback = (_, _, _, _) =>
-                    {
-                        return true;
-                    },
-                    ApplicationProtocols = [SslApplicationProtocol.Http3],
-                    TargetHost = "localhost",
-                    EnabledSslProtocols = SslProtocols.Tls13,
-                    ClientCertificates = [CertificateHelper.ClientCertificate]
-                },
-                DefaultCloseErrorCode = 0,
-                DefaultStreamErrorCode = 0,
-                MaxInboundBidirectionalStreams = 1024,
-                MaxInboundUnidirectionalStreams = 128,
-                IdleTimeout = TimeSpan.FromMinutes(10),
-                KeepAliveInterval = TimeSpan.FromMinutes(1)
-            });
-            _quicRpcClient = new BenchmarkRpcClient();
-            _quicRpcService.BindClient(_quicRpcClientConnection, ref _quicRpcClient);
-            await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (_, _) => await _quicRpcClient.Test2(new Hello { Name = "Hi" }));
+            await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (_, _) => await _quicRpcClient.Empty());
         }
 
         [GlobalSetup(Targets = ["Grpc", "GrpcWithQuic"])]
@@ -208,7 +146,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
             _grpcChannelHttp2 = GrpcChannel.ForAddress($"https://localhost:52300", new GrpcChannelOptions { HttpClient = http2Client });
             _grpcClientHttp2 = new BenchmarkGrpc.BenchmarkGrpcClient(_grpcChannelHttp2);
             await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (_, _) =>
-                await _grpcClientHttp2.TestAsync(new Hello { Name = "Hi" }));
+                await _grpcClientHttp2.EmptyAsync(new Google.Protobuf.WellKnownTypes.Empty()));
 
             SocketsHttpHandler socketsHttp3Handler = new SocketsHttpHandler();
             socketsHttp3Handler.EnableMultipleHttp2Connections = true;
@@ -220,10 +158,10 @@ namespace Wodsoft.QuicRpc.Benchmarks
             _grpcChannelHttp3 = GrpcChannel.ForAddress($"https://localhost:52300", new GrpcChannelOptions { HttpClient = http3Client, HttpVersion = HttpVersion.Version30, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact });
             _grpcClientHttp3 = new BenchmarkGrpc.BenchmarkGrpcClient(_grpcChannelHttp3);
             await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (_, _) =>
-                await _grpcClientHttp3.TestAsync(new Hello { Name = "Hi" }));
+                await _grpcClientHttp3.EmptyAsync(new Google.Protobuf.WellKnownTypes.Empty()));
         }
 
-        [GlobalCleanup(Targets = ["QuicRpc", "QuicRpcWithProtobuf"])]
+        [GlobalCleanup(Targets = ["QuicRpc"])]
         public async void GlobalCleanupQuicRpc()
         {
             _cts.Cancel();
@@ -264,32 +202,13 @@ namespace Wodsoft.QuicRpc.Benchmarks
             {
                 for (int i = 0; i < Batch; i++)
                 {
-                    await _quicRpcClient.Test3(new Hello2 { Name = "Hi" }).ConfigureAwait(false);
+                    await _quicRpcClient.Empty().ConfigureAwait(false);
                 }
             }
             else
             {
                 await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread }, async (_, _) =>
-                    await _quicRpcClient.Test3(new Hello2 { Name = "Hi" }).ConfigureAwait(false))
-                .ConfigureAwait(false);
-            }
-        }
-
-        [Benchmark()]
-        [ArgumentsSource(nameof(Parameters))]
-        public async Task QuicRpcWithProtobuf(int Batch, int Thread)
-        {
-            if (Thread == 1)
-            {
-                for (int i = 0; i < Batch; i++)
-                {
-                    await _quicRpcClient.Test2(new Hello { Name = "Hi" }).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread }, async (_, _) =>
-                    await _quicRpcClient.Test2(new Hello { Name = "Hi" }).ConfigureAwait(false))
+                    await _quicRpcClient.Empty().ConfigureAwait(false))
                 .ConfigureAwait(false);
             }
         }
@@ -298,17 +217,18 @@ namespace Wodsoft.QuicRpc.Benchmarks
         [ArgumentsSource(nameof(Parameters))]
         public async Task Grpc(int Batch, int Thread)
         {
+            var empty = new Google.Protobuf.WellKnownTypes.Empty();
             if (Thread == 1)
             {
                 for (int i = 0; i < Batch; i++)
                 {
-                    await _grpcClientHttp2.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false);
+                    await _grpcClientHttp2.EmptyAsync(empty).ConfigureAwait(false);
                 }
             }
             else
             {
                 await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread },
-                    async (_, _) => await _grpcClientHttp2.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false)).ConfigureAwait(false);
+                    async (_, _) => await _grpcClientHttp2.EmptyAsync(empty).ConfigureAwait(false)).ConfigureAwait(false);
             }
         }
 
@@ -316,36 +236,18 @@ namespace Wodsoft.QuicRpc.Benchmarks
         [ArgumentsSource(nameof(Parameters))]
         public async Task GrpcWithQuic(int Batch, int Thread)
         {
+            var empty = new Google.Protobuf.WellKnownTypes.Empty();
             if (Thread == 1)
             {
                 for (int i = 0; i < Batch; i++)
                 {
-                    await _grpcClientHttp3.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false);
+                    await _grpcClientHttp3.EmptyAsync(empty).ConfigureAwait(false);
                 }
             }
             else
             {
                 await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread },
-                    async (_, _) => await _grpcClientHttp3.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false)).ConfigureAwait(false);
-            }
-        }
-
-        private class ProtobufQuicRpcSerializer : QuicRpcSerializer
-        {
-            public override ValueTask<T> DeserializeAsync<[DynamicallyAccessedMembers((DynamicallyAccessedMemberTypes)(-1))] T>(Stream stream, CancellationToken cancellationToken = default) where T : default
-            {
-                Google.Protobuf.CodedInputStream codedInput = new Google.Protobuf.CodedInputStream(stream);
-                var hello = new Hello();
-                hello.MergeFrom(codedInput);
-                return ValueTask.FromResult((T)(object)hello);
-            }
-
-            public override ValueTask SerializeAsync<T>(Stream stream, T value, CancellationToken cancellationToken = default)
-            {
-                var hello = (Hello)(object)value;
-                Google.Protobuf.CodedOutputStream codedOutput = new Google.Protobuf.CodedOutputStream(stream);
-                hello.WriteTo(codedOutput);
-                return ValueTask.CompletedTask;
+                    async (_, _) => await _grpcClientHttp3.EmptyAsync(empty).ConfigureAwait(false)).ConfigureAwait(false);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftAntimalwareAMFilter;
 using System;
 using System.Collections.Generic;
@@ -74,56 +74,6 @@ namespace Wodsoft.QuicRpc.Benchmarks
             }
         }
 
-        [Benchmark]
-        [ArgumentsSource(nameof(Parameters))]
-        public void Mole2(int batch, int thread)
-        {
-            MoleLifetime2 lifetime = new MoleLifetime2();
-            if (thread == 1)
-            {
-                for (int i = 0; i < batch; i++)
-                {
-                    var request = CreateRequest();
-                    lifetime.Add(request);
-                    lifetime.Remove(request);
-                }
-            }
-            else
-            {
-                Parallel.For(0, batch, new ParallelOptions { MaxDegreeOfParallelism = thread }, (_, _) =>
-                {
-                    var request = CreateRequest();
-                    lifetime.Add(request);
-                    lifetime.Remove(request);
-                });
-            }
-        }
-
-        //[Benchmark]
-        //[ArgumentsSource(nameof(Parameters))]
-        //public void Mole3(int batch, int thread)
-        //{
-        //    MoleLifetime3 lifetime = new MoleLifetime3();
-        //    if (thread == 1)
-        //    {
-        //        for (int i = 0; i < batch; i++)
-        //        {
-        //            var request = CreateRequest();
-        //            lifetime.Add(request);
-        //            lifetime.Remove(request);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Parallel.For(0, batch, new ParallelOptions { MaxDegreeOfParallelism = thread }, (_, _) =>
-        //        {
-        //            var request = CreateRequest();
-        //            lifetime.Add(request);
-        //            lifetime.Remove(request);
-        //        });
-        //    }
-        //}
-
         private Request CreateRequest()
         {
             var index = Interlocked.Add(ref _index, 1);
@@ -171,35 +121,6 @@ namespace Wodsoft.QuicRpc.Benchmarks
         }
 
         private class MoleLifetime : ILifetime
-        {
-            private int _count;
-            private TaskCompletionSource _tcs;
-
-            public void Add(Request request)
-            {
-                Interlocked.Increment(ref _count);
-            }
-
-            public void Remove(Request request)
-            {
-                var count = Interlocked.Decrement(ref _count);
-                if (count == 0)
-                    Volatile.Read(ref _tcs)?.SetResult();
-            }
-
-            public Task WaitAllAsync()
-            {
-                if (Volatile.Read(ref _count) == 0)
-                    return Task.CompletedTask;
-                var tcs = new TaskCompletionSource();
-                Volatile.Write(ref _tcs, tcs);
-                if (Volatile.Read(ref _count) == 0)
-                    return Task.CompletedTask;
-                return _tcs.Task;
-            }
-        }
-
-        private class MoleLifetime2 : ILifetime
         {
             private int _count;
             private TaskCompletionSource _tcs;

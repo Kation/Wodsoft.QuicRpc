@@ -1,7 +1,8 @@
-﻿syntax = "proto3";
+syntax = "proto3";
+import "google/protobuf/empty.proto";
 
 service BenchmarkGrpc {
-  rpc Test (Hello) returns (Hello);
+  rpc Empty(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message Hello {

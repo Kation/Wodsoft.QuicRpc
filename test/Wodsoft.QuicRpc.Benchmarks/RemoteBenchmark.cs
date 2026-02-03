@@ -1,7 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
-using BenchmarkDotNet.Diagnostics.dotTrace;
-using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -74,7 +72,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
             });
             _quicRpcClient = new BenchmarkRpcClient();
             _quicRpcService.BindClient(_quicRpcClientConnection, ref _quicRpcClient);
-            await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 16 }, async (_, _) => await _quicRpcClient.Test("Hi"));
+            await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 16 }, async (_, _) => await _quicRpcClient.Empty());
 
             SocketsHttpHandler socketsHttp2Handler = new SocketsHttpHandler();
             socketsHttp2Handler.EnableMultipleHttp2Connections = true;
@@ -88,7 +86,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
             _grpcChannelHttp2 = GrpcChannel.ForAddress($"https://10.128.0.66:52300", new GrpcChannelOptions { HttpClient = http2Client });
             _grpcClientHttp2 = new BenchmarkGrpc.BenchmarkGrpcClient(_grpcChannelHttp2);
             await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 16 }, async (_, _) =>
-                await _grpcClientHttp2.TestAsync(new Hello { Name = "Hi" }));
+                await _grpcClientHttp2.EmptyAsync(new Google.Protobuf.WellKnownTypes.Empty()));
 
             SocketsHttpHandler socketsHttp3Handler = new SocketsHttpHandler();
             socketsHttp3Handler.EnableMultipleHttp2Connections = true;
@@ -100,7 +98,7 @@ namespace Wodsoft.QuicRpc.Benchmarks
             _grpcChannelHttp3 = GrpcChannel.ForAddress($"https://10.128.0.66:52300", new GrpcChannelOptions { HttpClient = http3Client, HttpVersion = HttpVersion.Version30, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact });
             _grpcClientHttp3 = new BenchmarkGrpc.BenchmarkGrpcClient(_grpcChannelHttp3);
             await Parallel.ForAsync(0, 100, new ParallelOptions { MaxDegreeOfParallelism = 16 }, async (_, _) =>
-                await _grpcClientHttp3.TestAsync(new Hello { Name = "Hi" }));
+                await _grpcClientHttp3.EmptyAsync(new Google.Protobuf.WellKnownTypes.Empty()));
         }
 
         [GlobalCleanup]
@@ -120,13 +118,13 @@ namespace Wodsoft.QuicRpc.Benchmarks
             {
                 for (int i = 0; i < Batch; i++)
                 {
-                    await _quicRpcClient.Test("Hi").ConfigureAwait(false);
+                    await _quicRpcClient.Empty().ConfigureAwait(false);
                 }
             }
             else
             {
                 await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread }, async (_, _) =>
-                    await _quicRpcClient.Test("Hi").ConfigureAwait(false))
+                    await _quicRpcClient.Empty().ConfigureAwait(false))
                 .ConfigureAwait(false);
             }
         }
@@ -135,17 +133,18 @@ namespace Wodsoft.QuicRpc.Benchmarks
         [ArgumentsSource(nameof(Parameters))]
         public async Task Grpc(int Batch, int Thread)
         {
+            var empty = new Google.Protobuf.WellKnownTypes.Empty();
             if (Thread == 1)
             {
                 for (int i = 0; i < Batch; i++)
                 {
-                    await _grpcClientHttp2.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false);
+                    await _grpcClientHttp2.EmptyAsync(empty).ConfigureAwait(false);
                 }
             }
             else
             {
                 await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread },
-                    async (_, _) => await _grpcClientHttp2.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false)).ConfigureAwait(false);
+                    async (_, _) => await _grpcClientHttp2.EmptyAsync(empty).ConfigureAwait(false)).ConfigureAwait(false);
             }
         }
 
@@ -153,17 +152,18 @@ namespace Wodsoft.QuicRpc.Benchmarks
         [ArgumentsSource(nameof(Parameters))]
         public async Task GrpcWithQuic(int Batch, int Thread)
         {
+            var empty = new Google.Protobuf.WellKnownTypes.Empty();
             if (Thread == 1)
             {
                 for (int i = 0; i < Batch; i++)
                 {
-                    await _grpcClientHttp3.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false);
+                    await _grpcClientHttp3.EmptyAsync(empty).ConfigureAwait(false);
                 }
             }
             else
             {
                 await Parallel.ForAsync(0, Batch, new ParallelOptions { MaxDegreeOfParallelism = Thread },
-                    async (_, _) => await _grpcClientHttp3.TestAsync(new Hello { Name = "Hi" }).ConfigureAwait(false)).ConfigureAwait(false);
+                    async (_, _) => await _grpcClientHttp3.EmptyAsync(empty).ConfigureAwait(false)).ConfigureAwait(false);
             }
         }
     }
