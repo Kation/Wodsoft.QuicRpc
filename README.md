@@ -1,17 +1,17 @@
 # QuicRpc
-QuicRpc是一个基于QUIC协议的高性能远程过程调用（RPC）框架，旨在提供低延迟、高吞吐量和可靠性以及快速开发的解决方案。
+`QuicRpc`是一个基于**QUIC**协议的高性能远程过程调用（RPC）框架，旨在提供低延迟、高吞吐量和可靠性以及快速开发的解决方案。
 
 为什么选择QuicRpc？
 - 低延迟  
-基于UDP协议的QUIC在互联网环境下能提供比TCP更低的延迟，从而提升RPC调用的响应速度。
+基于**UDP**协议的**QUIC**在互联网环境下能提供比**TCP**更低的延迟，从而提升RPC调用的响应速度。
 - 高稳定  
-QUIC协议提供了稳定可靠的连接管理和拥塞控制，确保在网络波动时依然能保持高效通信。
+**QUIC**协议提供了稳定可靠的连接管理和拥塞控制，确保在网络波动时依然能保持高效通信。
 - 支持P2P调用  
-QUIC是基于UDP的协议，支持P2P通信。
+**QUIC**是基于**UDP**的协议，支持**P2P**通信。
 - 简单易用  
 仅需少量代码即可在现有**QUIC连接**上实现RPC调用。
 - 支持AOT  
-使用Source Generator生成代码，支持AOT编译。
+使用**Source Generator**生成代码，支持AOT编译。
 
 ## 安装
 
@@ -227,11 +227,12 @@ public partial struct RpcClient : IQuicRpcClient
 
 ## 性能
 
-使用无请求参数、无返回值的方法进行测试，排除序列化差异问题。
+使用无请求参数、无返回值的方法进行测试，排除序列化差异问题。  
+`Batch`为一轮测试的总请求数，`Thread`为本轮测试中并发请求线程数。
 
 ### 本机127.0.0.1环回测试
 
-服务端与客户端均运行在测试进程里。
+i9-13900HK物理机，服务端与客户端均运行在测试进程里。
 
 BenchmarkDotNet v0.15.8, Windows 11 (10.0.26100.4061/24H2/2024Update/HudsonValley)
 13th Gen Intel Core i9-13900HK 2.60GHz, 1 CPU, 20 logical and 14 physical cores
