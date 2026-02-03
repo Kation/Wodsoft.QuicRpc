@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
@@ -115,12 +115,18 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                                     location: Location.Create(typeDeclarationSyntax.SyntaxTree, functionAttribute.ApplicationSyntaxReference.Span)));
                                 continue;
                             }
+                            var parameter = methodSyntax.Parameters.FirstOrDefault();
+                            var cancellationParameter = methodSyntax.Parameters.LastOrDefault();
+                            if (SyntaxHelper.IsSameFullName(parameter.Type, "System.Threading.CancellationToken"))
+                                parameter = null;
+                            if (!SyntaxHelper.IsSameFullName(cancellationParameter.Type, "System.Threading.CancellationToken"))
+                                cancellationParameter = null;
                             functions.Add(functionId, new RpcFunction
                             {
                                 ReturnType = isStreaming ? null : ((INamedTypeSymbol)methodSyntax.ReturnType).TypeArguments.FirstOrDefault(),
                                 Method = methodSyntax,
-                                Parameter = methodSyntax.Parameters.FirstOrDefault(),
-                                CancellationTokenParameter = methodSyntax.Parameters.Skip(1).FirstOrDefault(),
+                                Parameter = parameter,
+                                CancellationTokenParameter = cancellationParameter,
                                 IsStreaming = isStreaming
                             });
                         }
