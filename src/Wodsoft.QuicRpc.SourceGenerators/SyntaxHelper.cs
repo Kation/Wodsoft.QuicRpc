@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using System;
@@ -30,12 +30,12 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                         {
                             if (item.Alias.Name.ToString() == f)
                             {
-                                return fullname == item.Name.ToString() + name.Substring(i);
+                                return fullname == item.Name!.ToString() + name.Substring(i);
                             }
                         }
                         else
                         {
-                            if (item.Name.ToString() + "." + name == fullname)
+                            if (item.Name!.ToString() + "." + name == fullname)
                                 return true;
                         }
                     }
@@ -86,12 +86,12 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                     continue;
                 if (item.Alias != null)
                 {
-                    if (item.Name.ToString() == fullname && name == item.Alias.Name.ToString())
+                    if (item.Name!.ToString() == fullname && name == item.Alias.Name.ToString())
                         return true;
                 }
                 else
                 {
-                    if (item.Name.ToString() == ns)
+                    if (item.Name!.ToString() == ns)
                     {
                         if (isAttribute && !name.EndsWith("Attribute"))
                             name += "Attribute";
@@ -152,7 +152,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                         if (item.Alias != null)
                         {
                             if (item.Alias.Name.ToString() == aliasSyntax.Alias.Identifier.Text)
-                                left = item.Name.ToString() + "." + aliasSyntax.Name.ToString();
+                                left = item.Name!.ToString() + "." + aliasSyntax.Name.ToString();
                         }
                     }
                     throw new InvalidProgramException($"Can not find alias name '{aliasSyntax.Name}'.");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO.Pipes;
@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
+#pragma warning disable CA1416 // 验证平台兼容性
 namespace Wodsoft.QuicRpc.UnitTest
 {
     public abstract class QuicRpcTests
@@ -101,6 +102,7 @@ namespace Wodsoft.QuicRpc.UnitTest
             {
                 if (_disposed)
                     return;
+                _disposed = true;
                 await ClientConnection.DisposeAsync();
                 await ServerConnection.DisposeAsync();
                 await Listener.DisposeAsync();
