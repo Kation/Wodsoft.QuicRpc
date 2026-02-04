@@ -6,6 +6,7 @@
   <Folder Name="/test/">
     <Project Path="test/Wodsoft.QuicRpc.Benchmarks/Wodsoft.QuicRpc.Benchmarks.csproj" />
     <Project Path="test/Wodsoft.QuicRpc.BenchmarkServer/Wodsoft.QuicRpc.BenchmarkServer.csproj" />
+    <Project Path="test/Wodsoft.QuicRpc.SourceGeneratorTest/Wodsoft.QuicRpc.SourceGeneratorTest.csproj" Id="5172ce8c-055b-447e-aad7-3205f3550c8f" />
     <Project Path="test/Wodsoft.QuicRpc.UnitTest/Wodsoft.QuicRpc.UnitTest.csproj" />
   </Folder>
   <Folder Name="/解决方案项/">
