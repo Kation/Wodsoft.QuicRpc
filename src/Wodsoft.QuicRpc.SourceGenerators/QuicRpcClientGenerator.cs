@@ -117,9 +117,9 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                             }
                             var parameter = methodSyntax.Parameters.FirstOrDefault();
                             var cancellationParameter = methodSyntax.Parameters.LastOrDefault();
-                            if (SyntaxHelper.IsSameFullName(parameter.Type, "System.Threading.CancellationToken"))
+                            if (parameter != null && SyntaxHelper.IsSameFullName(parameter.Type, "System.Threading.CancellationToken"))
                                 parameter = null;
-                            if (!SyntaxHelper.IsSameFullName(cancellationParameter.Type, "System.Threading.CancellationToken"))
+                            if (cancellationParameter != null && !SyntaxHelper.IsSameFullName(cancellationParameter.Type, "System.Threading.CancellationToken"))
                                 cancellationParameter = null;
                             functions.Add(functionId, new RpcFunction
                             {
