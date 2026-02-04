@@ -9,6 +9,7 @@
   
   <ItemGroup>
     <PackageReference Include="MemoryPack" Version="1.21.4" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
