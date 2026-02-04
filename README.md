@@ -117,7 +117,8 @@ quicRpcService.BindFunctions(new RpcFunctions());
 quicRpcService.HandleConnection(connection, new RpcContext(), cancellationToken);
 ```
 
-`HandleConnection`方法会返回一个`Task`，表示该连接的RPC处理的生命周期，直到连接关闭或者发生异常。
+`HandleConnection`方法会返回一个`Task`，表示该连接的RPC处理任务。  
+方法内会循环接受新的`QuicStream`，直到连接关闭或者发生异常。
 
 ### 调用服务端
 
@@ -157,6 +158,19 @@ public class QuicRpcService<TContext>
     public void RegisterFunction(ushort functionId, Func<QuicRpcContext<TContext>, ValueTask> func);
 
     public void RegisterStreamingFunction(ushort functionId, Func<QuicRpcContext<TContext>, ValueTask> func);
+}
+```
+
+### 共享Quic连接
+
+如果Quic连接不仅仅用于QuicRpc时，开发者可以不调用`HandleConnection`，而是自行管理连入的`QuicStream`。  
+通过增加`QuicStream`的头部数据，当满足条件的时候，再调用`StreamHandle`处理RPC业务。  
+此时客户端将无法通过**Source Generator**生成的代码进行调用，应自行打开出口`QuicStream`，写入头部数据后再调用`InvokeFunctionAsync`方法进行调用。
+
+```csharp
+public class QuicRpcService<TContext>
+{
+    public Task StreamHandle(QuicStream stream, TContext context, Action<Exception>? exceptionDelegate, CancellationToken cancellationToken);
 }
 ```
 

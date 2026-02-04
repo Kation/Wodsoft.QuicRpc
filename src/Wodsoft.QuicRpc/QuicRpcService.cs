@@ -143,38 +143,37 @@ namespace Wodsoft.QuicRpc
 
         public override async ValueTask<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
         {
+            var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
             {
-                using (var header = MemoryPool<byte>.Shared.Rent(2))
+                var header = buffer.AsMemory().Slice(0, 2);
+                MemoryMarshal.Write(header.Span, functionId);
+                await stream.WriteAsync(header).ConfigureAwait(false);
+                await _serializer.SerializeAsync(stream, request, cancellationToken).ConfigureAwait(false);
+                stream.CompleteWrites();
+                var read = await stream.ReadAsync(header, cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
+                if (header.Span[0] != _Placeholder)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                if (read != 2)
                 {
-                    MemoryMarshal.Write(header.Memory.Span, functionId);
-                    await stream.WriteAsync(header.Memory.Slice(0, 2)).ConfigureAwait(false);
-                    await _serializer.SerializeAsync(stream, request, cancellationToken).ConfigureAwait(false);
-                    stream.CompleteWrites();
-                    var read = await stream.ReadAsync(header.Memory.Slice(0, 2), cancellationToken).ConfigureAwait(false);
+                    read = await stream.ReadAsync(header.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
                     if (read == 0)
-                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
-                    if (header.Memory.Span[0] != _Placeholder)
                         throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    if (read != 2)
-                    {
-                        read = await stream.ReadAsync(header.Memory.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
-                        if (read == 0)
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    var result = (QuicRpcResult)header.Memory.Span[1];
-                    switch (result)
-                    {
-                        case QuicRpcResult.Streaming:
-                        case QuicRpcResult.Success:
-                            throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
-                        case QuicRpcResult.Response:
-                            break;
-                        default:
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    return (await _serializer.DeserializeAsync<TResponse>(stream, cancellationToken).ConfigureAwait(false))!;
                 }
+                var result = (QuicRpcResult)header.Span[1];
+                switch (result)
+                {
+                    case QuicRpcResult.Streaming:
+                    case QuicRpcResult.Success:
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                    case QuicRpcResult.Response:
+                        break;
+                    default:
+                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                }
+                return (await _serializer.DeserializeAsync<TResponse>(stream, cancellationToken).ConfigureAwait(false))!;
             }
             catch (QuicException ex)
             {
@@ -191,41 +190,44 @@ namespace Wodsoft.QuicRpc
                     }
                 }
                 throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
         public override async ValueTask<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
+            var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
             {
-                using (var header = MemoryPool<byte>.Shared.Rent(2))
+                var header = buffer.AsMemory().Slice(0, 2);
+                MemoryMarshal.Write(header.Span, functionId);
+                    await stream.WriteAsync(header, true).ConfigureAwait(false);
+                var read = await stream.ReadAsync(header, cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
+                if (header.Span[0] != _Placeholder)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                if (read != 2)
                 {
-                    MemoryMarshal.Write(header.Memory.Span, functionId);
-                    await stream.WriteAsync(header.Memory.Slice(0, 2), true).ConfigureAwait(false);
-                    var read = await stream.ReadAsync(header.Memory.Slice(0, 2), cancellationToken).ConfigureAwait(false);
+                    read = await stream.ReadAsync(header.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
                     if (read == 0)
-                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
-                    if (header.Memory.Span[0] != _Placeholder)
                         throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    if (read != 2)
-                    {
-                        read = await stream.ReadAsync(header.Memory.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
-                        if (read == 0)
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    var result = (QuicRpcResult)header.Memory.Span[1];
-                    switch (result)
-                    {
-                        case QuicRpcResult.Streaming:
-                        case QuicRpcResult.Success:
-                            throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
-                        case QuicRpcResult.Response:
-                            break;
-                        default:
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    return (await _serializer.DeserializeAsync<TResponse>(stream, cancellationToken).ConfigureAwait(false))!;
                 }
+                var result = (QuicRpcResult)header.Span[1];
+                switch (result)
+                {
+                    case QuicRpcResult.Streaming:
+                    case QuicRpcResult.Success:
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                    case QuicRpcResult.Response:
+                        break;
+                    default:
+                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                }
+                return (await _serializer.DeserializeAsync<TResponse>(stream, cancellationToken).ConfigureAwait(false))!;
             }
             catch (QuicException ex)
             {
@@ -242,41 +244,44 @@ namespace Wodsoft.QuicRpc
                     }
                 }
                 throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
         public override async ValueTask InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
         {
+            var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
             {
-                using (var header = MemoryPool<byte>.Shared.Rent(2))
+                var header = buffer.AsMemory().Slice(0, 2);
+                MemoryMarshal.Write(header.Span, functionId);
+                await stream.WriteAsync(header).ConfigureAwait(false);
+                await _serializer.SerializeAsync(stream, request, cancellationToken).ConfigureAwait(false);
+                stream.CompleteWrites();
+                var read = await stream.ReadAsync(header, cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
+                if (header.Span[0] != _Placeholder)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                if (read != 2)
                 {
-                    MemoryMarshal.Write(header.Memory.Span, functionId);
-                    await stream.WriteAsync(header.Memory.Slice(0, 2)).ConfigureAwait(false);
-                    await _serializer.SerializeAsync(stream, request, cancellationToken).ConfigureAwait(false);
-                    stream.CompleteWrites();
-                    var read = await stream.ReadAsync(header.Memory.Slice(0, 2), cancellationToken).ConfigureAwait(false);
+                    read = await stream.ReadAsync(header.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
                     if (read == 0)
-                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
-                    if (header.Memory.Span[0] != _Placeholder)
                         throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    if (read != 2)
-                    {
-                        read = await stream.ReadAsync(header.Memory.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
-                        if (read == 0)
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    var result = (QuicRpcResult)header.Memory.Span[1];
-                    switch (result)
-                    {
-                        case QuicRpcResult.Streaming:
-                        case QuicRpcResult.Response:
-                            throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
-                        case QuicRpcResult.Success:
-                            break;
-                        default:
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
+                }
+                var result = (QuicRpcResult)header.Span[1];
+                switch (result)
+                {
+                    case QuicRpcResult.Streaming:
+                    case QuicRpcResult.Response:
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                    case QuicRpcResult.Success:
+                        break;
+                    default:
+                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
                 }
             }
             catch (QuicException ex)
@@ -295,39 +300,42 @@ namespace Wodsoft.QuicRpc
                 }
                 throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
             }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         public override async ValueTask InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
+            var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
             {
-                using (var header = MemoryPool<byte>.Shared.Rent(2))
+                var header = buffer.AsMemory().Slice(0, 2);
+                MemoryMarshal.Write(header.Span, functionId);
+                await stream.WriteAsync(header, true).ConfigureAwait(false);
+                Debug.WriteLine("Header sent.");
+                var read = await stream.ReadAsync(header, cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
+                if (header.Span[0] != _Placeholder)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                if (read != 2)
                 {
-                    MemoryMarshal.Write(header.Memory.Span, functionId);
-                    await stream.WriteAsync(header.Memory.Slice(0, 2), true).ConfigureAwait(false);
-                    Debug.WriteLine("Header sent.");
-                    var read = await stream.ReadAsync(header.Memory.Slice(0, 2), cancellationToken).ConfigureAwait(false);
+                    read = await stream.ReadAsync(header.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
                     if (read == 0)
-                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
-                    if (header.Memory.Span[0] != _Placeholder)
                         throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    if (read != 2)
-                    {
-                        read = await stream.ReadAsync(header.Memory.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
-                        if (read == 0)
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    var result = (QuicRpcResult)header.Memory.Span[1];
-                    switch (result)
-                    {
-                        case QuicRpcResult.Streaming:
-                        case QuicRpcResult.Response:
-                            throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
-                        case QuicRpcResult.Success:
-                            break;
-                        default:
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
+                }
+                var result = (QuicRpcResult)header.Span[1];
+                switch (result)
+                {
+                    case QuicRpcResult.Streaming:
+                    case QuicRpcResult.Response:
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                    case QuicRpcResult.Success:
+                        break;
+                    default:
+                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
                 }
             }
             catch (QuicException ex)
@@ -346,38 +354,41 @@ namespace Wodsoft.QuicRpc
                 }
                 throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, ex, "QuicRpc protocol error.");
             }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         public override async ValueTask<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
+            var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
             {
-                using (var header = MemoryPool<byte>.Shared.Rent(2))
+                var header = buffer.AsMemory().Slice(0, 2);
+                MemoryMarshal.Write(header.Span, functionId);
+                await stream.WriteAsync(header).ConfigureAwait(false);
+                var read = await stream.ReadAsync(header, cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
+                if (header.Span[0] != _Placeholder)
+                    throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+                if (read != 2)
                 {
-                    MemoryMarshal.Write(header.Memory.Span, functionId);
-                    await stream.WriteAsync(header.Memory.Slice(0, 2)).ConfigureAwait(false);
-                    var read = await stream.ReadAsync(header.Memory.Slice(0, 2), cancellationToken).ConfigureAwait(false);
+                    read = await stream.ReadAsync(header.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
                     if (read == 0)
-                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc not configure successfully at remote.");
-                    if (header.Memory.Span[0] != _Placeholder)
                         throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    if (read != 2)
-                    {
-                        read = await stream.ReadAsync(header.Memory.Slice(read, 2 - read), cancellationToken).ConfigureAwait(false);
-                        if (read == 0)
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
-                    var result = (QuicRpcResult)header.Memory.Span[1];
-                    switch (result)
-                    {
-                        case QuicRpcResult.Success:
-                        case QuicRpcResult.Response:
-                            throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
-                        case QuicRpcResult.Streaming:
-                            break;
-                        default:
-                            throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
-                    }
+                }
+                var result = (QuicRpcResult)header.Span[1];
+                switch (result)
+                {
+                    case QuicRpcResult.Success:
+                    case QuicRpcResult.Response:
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                    case QuicRpcResult.Streaming:
+                        break;
+                    default:
+                        throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
                 }
                 return stream;
             }
@@ -396,6 +407,10 @@ namespace Wodsoft.QuicRpc
                     }
                 }
                 throw new QuicRpcException(QuicRpcExceptionType.ProtocolError, "QuicRpc protocol error.");
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
@@ -443,54 +458,54 @@ namespace Wodsoft.QuicRpc
 
         public async Task StreamHandle(QuicStream stream, TContext context, Action<Exception>? exceptionDelegate, CancellationToken cancellationToken)
         {
+            var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
             {
-                using (var header = MemoryPool<byte>.Shared.Rent(2))
+                var header = buffer.AsMemory().Slice(0, 2);
+                try
                 {
-                    try
+                    await stream.ReadExactlyAsync(header, cancellationToken).ConfigureAwait(false);
+                    MethodCall func = _functions[MemoryMarshal.Read<ushort>(header.Span)];
+                    if (func == null)
                     {
-                        await stream.ReadExactlyAsync(header.Memory.Slice(0, 2), cancellationToken).ConfigureAwait(false);
-                        MethodCall func = _functions[MemoryMarshal.Read<ushort>(header.Memory.Span)];
-                        if (func == null)
-                        {
-                            stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.FunctionNotFound);
-                            return;
-                        }
-                        header.Memory.Span[0] = _Placeholder;
-                        await func(stream, context, header.Memory, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.RemoteShutdown);
+                        stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.FunctionNotFound);
                         return;
                     }
-                    catch (OperationCanceledException)
-                    {
-                        stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.RemoteShutdown);
-                        return;
-                    }
-                    catch (QuicException)
-                    {
-                        return;
-                    }
-                    catch (EndOfStreamException)
-                    {
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.RemoteException);
-                        exceptionDelegate?.Invoke(ex);
-                        return;
-                    }
+                    header.Span[0] = _Placeholder;
+                    await func(stream, context, header, cancellationToken).ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
+                    stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.RemoteShutdown);
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.RemoteShutdown);
+                    return;
+                }
+                catch (QuicException)
+                {
+                    return;
+                }
+                catch (EndOfStreamException)
+                {
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    stream.Abort(QuicAbortDirection.Both, (long)QuicRpcExceptionType.RemoteException);
+                    exceptionDelegate?.Invoke(ex);
+                    return;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
             finally
             {
+                ArrayPool<byte>.Shared.Return(buffer);
                 await stream.DisposeAsync().ConfigureAwait(false);
             }
         }
