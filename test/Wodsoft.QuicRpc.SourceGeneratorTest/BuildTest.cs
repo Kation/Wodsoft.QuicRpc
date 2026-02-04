@@ -22,7 +22,7 @@ namespace Wodsoft.QuicRpc.SourceGeneratorTest
             var workspace = MSBuildWorkspace.Create();
             var project = await workspace.OpenProjectAsync(path);
             var compilation = await project.GetCompilationAsync();
-            GeneratorDriver driver = CSharpGeneratorDriver.Create(new ISourceGenerator[] { new QuicRpcFunctionsGenerator(), new QuicRpcClientGenerator() }, driverOptions: new GeneratorDriverOptions(default, trackIncrementalGeneratorSteps: true));
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(new QuicRpcFunctionsGenerator(), new QuicRpcClientGenerator());
 
             driver = driver.RunGenerators(compilation!);
         }
