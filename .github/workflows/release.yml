@@ -23,7 +23,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Pack
-      run: dotnet pack -c Release src/Wodsoft.QuicRpc/Wodsoft.QuicRpc.csproj -p:Version=${{github.ref}} -o nupkgs --no-build
+      run: dotnet pack -c Release src/Wodsoft.QuicRpc/Wodsoft.QuicRpc.csproj -p:Version=${{github.ref_name}} -o nupkgs --no-build
     - name: NuGet login (OIDC → temp API key)
       uses: NuGet/login@v1
       id: login
