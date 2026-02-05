@@ -21,7 +21,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build -c Release --no-restore
     - name: Pack
       run: dotnet pack -c Release src/Wodsoft.QuicRpc/Wodsoft.QuicRpc.csproj -p:Version=${{github.ref_name}} -o nupkgs --no-build
     - name: NuGet login (OIDC → temp API key)
