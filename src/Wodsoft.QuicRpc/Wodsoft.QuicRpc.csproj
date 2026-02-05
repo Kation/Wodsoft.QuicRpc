@@ -16,6 +16,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Description>基于Quic的RPC框架。</Description>
   </PropertyGroup>
   
   <ItemGroup>
