@@ -164,13 +164,13 @@ public class QuicRpcService<TContext>
 ### 共享Quic连接
 
 如果Quic连接不仅仅用于QuicRpc时，开发者可以不调用`HandleConnection`，而是自行管理连入的`QuicStream`。  
-通过增加`QuicStream`的头部数据，当满足条件的时候，再调用`StreamHandle`处理RPC业务。  
+通过增加`QuicStream`的头部数据，当满足条件的时候，再调用`HandleStream`处理RPC业务。  
 此时客户端将无法通过**Source Generator**生成的代码进行调用，应自行打开出口`QuicStream`，写入头部数据后再调用`InvokeFunctionAsync`方法进行调用。
 
 ```csharp
 public class QuicRpcService<TContext>
 {
-    public Task StreamHandle(QuicStream stream, TContext context, Action<Exception>? exceptionDelegate, CancellationToken cancellationToken);
+    public Task HandleStream(QuicStream stream, TContext context, Action<Exception>? exceptionDelegate, CancellationToken cancellationToken);
 }
 ```
 

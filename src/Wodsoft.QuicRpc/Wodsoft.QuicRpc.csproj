@@ -5,6 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <RepositoryUrl>https://github.com/Kation/Wodsoft.QuicRpc</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Kation/Wodsoft.QuicRpc</PackageProjectUrl>
+    <Product>Wodsoft QuicRpc</Product>
+    <PackageTags>UDP QUIC RPC QUICRPC</PackageTags>
+    <Authors>Kation</Authors>
+    <PackageId>$(AssemblyName)</PackageId>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
   
   <ItemGroup>

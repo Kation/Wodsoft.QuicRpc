@@ -21,36 +21,98 @@ using System.Threading.Tasks;
 #pragma warning disable CA1416 // 验证平台兼容性
 namespace Wodsoft.QuicRpc
 {
+    /// <summary>
+    /// QuicRpc服务的抽象基类。
+    /// </summary>
     public abstract class QuicRpcService
     {
+        /// <summary>
+        /// 异步调用带有请求和响应类型的 Function。
+        /// </summary>
+        /// <typeparam name="TRequest">请求类型。</typeparam>
+        /// <typeparam name="TResponse">响应类型。</typeparam>
+        /// <param name="stream">用于通信的QuicStream。</param>
+        /// <param name="functionId">要调用的服务方法的标识符。</param>
+        /// <param name="request">要发送的请求对象。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回包含响应的异步任务。</returns>
         public abstract ValueTask<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// 异步调用无请求但有响应的 Function。
+        /// </summary>
+        /// <typeparam name="TResponse">响应类型。</typeparam>
+        /// <param name="stream">用于通信的QuicStream。</param>
+        /// <param name="functionId">要调用的服务方法的标识符。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回包含响应的异步任务。</returns>
         public abstract ValueTask<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// 异步调用带有请求但无响应的 Function。
+        /// </summary>
+        /// <typeparam name="TRequest">请求类型。</typeparam>
+        /// <param name="stream">用于通信的QuicStream。</param>
+        /// <param name="functionId">要调用的服务方法的标识符。</param>
+        /// <param name="request">要发送的请求对象。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回表示操作完成的异步任务。</returns>
         public abstract ValueTask InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// 异步调用无请求且无响应的 Function。
+        /// </summary>
+        /// <param name="stream">用于通信的QuicStream。</param>
+        /// <param name="functionId">要调用的服务方法的标识符。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回表示操作完成的异步任务。</returns>
         public abstract ValueTask InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// 异步调用返回流式响应的 Function，成功时返回远端的 QuicStream 用于后续流式通信。
+        /// </summary>
+        /// <param name="stream">用于通信的QuicStream。</param>
+        /// <param name="functionId">要调用的服务方法的标识符。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回包含远端QuicStream的异步任务。</returns>
         public abstract ValueTask<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
     }
 
+    /// <summary>
+    /// QuicRpc服务，包含注册服务方法和处理连接的逻辑。
+    /// </summary>
+    /// <typeparam name="TContext">连接相关的用户上下文类型。</typeparam>
     public class QuicRpcService<TContext> : QuicRpcService
     {
         private readonly MethodCall[] _functions;
         private readonly QuicRpcSerializer _serializer;
         private const byte _Placeholder = 0x78;
 
+        /// <summary>
+        /// 使用默认序列化器创建QuicRpcService实例。
+        /// </summary>
         public QuicRpcService() : this(QuicRpcSerializer.Default)
         {
 
         }
 
+        /// <summary>
+        /// 使用指定的序列化器创建QuicRpcService实例。
+        /// </summary>
+        /// <param name="serializer">用于序列化/反序列化的QuicRpcSerializer实例。</param>
         public QuicRpcService(QuicRpcSerializer serializer)
         {
             _functions = new MethodCall[65536];
             _serializer = serializer;
         }
 
+        /// <summary>
+        /// 注册带请求参数和响应参数的服务方法实现。
+        /// </summary>
+        /// <typeparam name="TRequest">请求类型。</typeparam>
+        /// <typeparam name="TResponse">响应类型。</typeparam>
+        /// <param name="functionId">服务方法标识符。</param>
+        /// <param name="func">处理函数。</param>
         public void RegisterFunction<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(ushort functionId, Func<QuicRpcContext<TContext>, TRequest, ValueTask<TResponse>> func)
         {
             EnsureFunctionNotRegistered(functionId);
@@ -71,6 +133,12 @@ namespace Wodsoft.QuicRpc
             RegisterFunction(functionId, invokeFunc);
         }
 
+        /// <summary>
+        /// 注册无请求参数但有响应参数的服务方法实现。
+        /// </summary>
+        /// <typeparam name="TResponse">响应类型。</typeparam>
+        /// <param name="functionId">服务方法标识符。</param>
+        /// <param name="func">处理函数。</param>
         public void RegisterFunction<TResponse>(ushort functionId, Func<QuicRpcContext<TContext>, ValueTask<TResponse>> func)
         {
             EnsureFunctionNotRegistered(functionId);
@@ -90,6 +158,12 @@ namespace Wodsoft.QuicRpc
             RegisterFunction(functionId, invokeFunc);
         }
 
+        /// <summary>
+        /// 注册带请求参数但无响应参数的服务方法实现。
+        /// </summary>
+        /// <typeparam name="TRequest">请求类型。</typeparam>
+        /// <param name="functionId">服务方法标识符。</param>
+        /// <param name="func">处理函数。</param>
         public void RegisterFunction<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TRequest>(ushort functionId, Func<QuicRpcContext<TContext>, TRequest, ValueTask> func)
         {
             EnsureFunctionNotRegistered(functionId);
@@ -103,6 +177,11 @@ namespace Wodsoft.QuicRpc
             RegisterFunction(functionId, invokeFunc);
         }
 
+        /// <summary>
+        /// 注册无请求参数且无响应参数的服务方法实现。
+        /// </summary>
+        /// <param name="functionId">服务方法标识符。</param>
+        /// <param name="func">处理函数。</param>
         public void RegisterFunction(ushort functionId, Func<QuicRpcContext<TContext>, ValueTask> func)
         {
             EnsureFunctionNotRegistered(functionId);
@@ -115,6 +194,11 @@ namespace Wodsoft.QuicRpc
             RegisterFunction(functionId, invokeFunc);
         }
 
+        /// <summary>
+        /// 注册流式服务方法，服务方法将通过上下文里的QuicStream进行数据处理。
+        /// </summary>
+        /// <param name="functionId">服务方法标识符。</param>
+        /// <param name="func">处理函数。</param>
         public void RegisterStreamingFunction(ushort functionId, Func<QuicRpcContext<TContext>, ValueTask> func)
         {
             EnsureFunctionNotRegistered(functionId);
@@ -132,7 +216,7 @@ namespace Wodsoft.QuicRpc
         {
             if (_functions[functionId] == null)
                 return;
-            throw new InvalidOperationException("Function already registered.");
+            throw new InvalidOperationException("服务方法already registered.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -141,6 +225,7 @@ namespace Wodsoft.QuicRpc
             _functions[functionId] = function;
         }
 
+        /// <inheritdoc/>
         public override async ValueTask<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
@@ -167,7 +252,7 @@ namespace Wodsoft.QuicRpc
                 {
                     case QuicRpcResult.Streaming:
                     case QuicRpcResult.Success:
-                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc服务方法signature not equal to remote.");
                     case QuicRpcResult.Response:
                         break;
                     default:
@@ -184,7 +269,7 @@ namespace Wodsoft.QuicRpc
                         case QuicRpcExceptionType.RemoteException:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteException, "QuicRpc invoke with exception at remote.");
                         case QuicRpcExceptionType.FunctionNotFound:
-                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc function not found at remote.");
+                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc服务方法not found at remote.");
                         case QuicRpcExceptionType.RemoteShutdown:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteShutdown, "QuicRpc server shutting down.");
                     }
@@ -197,6 +282,7 @@ namespace Wodsoft.QuicRpc
             }
         }
 
+        /// <inheritdoc/>
         public override async ValueTask<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
@@ -221,7 +307,7 @@ namespace Wodsoft.QuicRpc
                 {
                     case QuicRpcResult.Streaming:
                     case QuicRpcResult.Success:
-                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc服务方法signature not equal to remote.");
                     case QuicRpcResult.Response:
                         break;
                     default:
@@ -238,7 +324,7 @@ namespace Wodsoft.QuicRpc
                         case QuicRpcExceptionType.RemoteException:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteException, "QuicRpc invoke with exception at remote.");
                         case QuicRpcExceptionType.FunctionNotFound:
-                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc function not found at remote.");
+                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc服务方法not found at remote.");
                         case QuicRpcExceptionType.RemoteShutdown:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteShutdown, "QuicRpc server shutting down.");
                     }
@@ -251,6 +337,7 @@ namespace Wodsoft.QuicRpc
             }
         }
 
+        /// <inheritdoc/>
         public override async ValueTask InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
@@ -277,7 +364,7 @@ namespace Wodsoft.QuicRpc
                 {
                     case QuicRpcResult.Streaming:
                     case QuicRpcResult.Response:
-                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc服务方法signature not equal to remote.");
                     case QuicRpcResult.Success:
                         break;
                     default:
@@ -293,7 +380,7 @@ namespace Wodsoft.QuicRpc
                         case QuicRpcExceptionType.RemoteException:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteException, "QuicRpc invoke with exception at remote.");
                         case QuicRpcExceptionType.FunctionNotFound:
-                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc function not found at remote.");
+                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc服务方法not found at remote.");
                         case QuicRpcExceptionType.RemoteShutdown:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteShutdown, "QuicRpc server shutting down.");
                     }
@@ -306,6 +393,7 @@ namespace Wodsoft.QuicRpc
             }
         }
 
+        /// <inheritdoc/>
         public override async ValueTask InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
@@ -331,7 +419,7 @@ namespace Wodsoft.QuicRpc
                 {
                     case QuicRpcResult.Streaming:
                     case QuicRpcResult.Response:
-                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc服务方法signature not equal to remote.");
                     case QuicRpcResult.Success:
                         break;
                     default:
@@ -347,7 +435,7 @@ namespace Wodsoft.QuicRpc
                         case QuicRpcExceptionType.RemoteException:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteException, "QuicRpc invoke with exception at remote.");
                         case QuicRpcExceptionType.FunctionNotFound:
-                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc function not found at remote.");
+                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc服务方法not found at remote.");
                         case QuicRpcExceptionType.RemoteShutdown:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteShutdown, "QuicRpc server shutting down.");
                     }
@@ -360,6 +448,7 @@ namespace Wodsoft.QuicRpc
             }
         }
 
+        /// <inheritdoc/>
         public override async ValueTask<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
@@ -384,7 +473,7 @@ namespace Wodsoft.QuicRpc
                 {
                     case QuicRpcResult.Success:
                     case QuicRpcResult.Response:
-                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc function signature not equal to remote.");
+                        throw new QuicRpcException(QuicRpcExceptionType.SignatureError, "QuicRpc服务方法signature not equal to remote.");
                     case QuicRpcResult.Streaming:
                         break;
                     default:
@@ -401,7 +490,7 @@ namespace Wodsoft.QuicRpc
                         case QuicRpcExceptionType.RemoteException:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteException, "QuicRpc invoke with exception at remote.");
                         case QuicRpcExceptionType.FunctionNotFound:
-                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc function not found at remote.");
+                            throw new QuicRpcException(QuicRpcExceptionType.FunctionNotFound, "QuicRpc服务方法not found at remote.");
                         case QuicRpcExceptionType.RemoteShutdown:
                             throw new QuicRpcException(QuicRpcExceptionType.RemoteShutdown, "QuicRpc server shutting down.");
                     }
@@ -414,6 +503,17 @@ namespace Wodsoft.QuicRpc
             }
         }
 
+        /// <summary>
+        /// 处理Quic连接。<br/>
+        /// 内部会循环接受传入流并调用HandleStream进行处理。
+        /// </summary>
+        /// <param name="connection">Quic连接。</param>
+        /// <param name="context">用户连接上下文。</param>
+        /// <param name="throwOnCancel">取消时引发异常。</param>
+        /// <param name="throwOnClose">关闭时引发异常。</param>
+        /// <param name="exceptionDelegate">处理异常的过程出现异常时回调委托。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回处理任务。</returns>
         public async Task HandleConnection(QuicConnection connection, TContext context, bool throwOnCancel = false, bool throwOnClose = false, Action<Exception>? exceptionDelegate = null, CancellationToken cancellationToken = default)
         {
             int count = 0;
@@ -426,7 +526,7 @@ namespace Wodsoft.QuicRpc
                     var stream = await connection.AcceptInboundStreamAsync(cancellationToken).ConfigureAwait(false);
                     Debug.Assert(stream != null);
                     Interlocked.Increment(ref count);
-                    var task = StreamHandle(stream, context, exceptionDelegate, cancellationToken).ContinueWith(_ =>
+                    var task = HandleStream(stream, context, exceptionDelegate, cancellationToken).ContinueWith(_ =>
                     {
                         var value = Interlocked.Decrement(ref count);
                         if (value == 0)
@@ -456,7 +556,15 @@ namespace Wodsoft.QuicRpc
             await t.Task.ConfigureAwait(false);
         }
 
-        public async Task StreamHandle(QuicStream stream, TContext context, Action<Exception>? exceptionDelegate, CancellationToken cancellationToken)
+        /// <summary>
+        /// 处理Quic流。
+        /// </summary>
+        /// <param name="stream">Quic流。</param>
+        /// <param name="context">用户连接上下文。</param>
+        /// <param name="exceptionDelegate">处理异常的过程出现异常时回调委托。</param>
+        /// <param name="cancellationToken">取消令牌。</param>
+        /// <returns>返回处理任务。</returns>
+        public async Task HandleStream(QuicStream stream, TContext context, Action<Exception>? exceptionDelegate, CancellationToken cancellationToken)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
