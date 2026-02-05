@@ -38,7 +38,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                 return;
             if (structType.ContainingType != null)
             {
-                context.ReportDiagnostic(Diagnostic.Create("QUICRPC006", "QuicRpc", "Nested structural do not support implementing IQuicRpcClient.", DiagnosticSeverity.Error,
+                context.ReportDiagnostic(Diagnostic.Create("QUICRPC006", "QuicRpc", "嵌套的struct不支持实现IQuicRpcClient。", DiagnosticSeverity.Error,
                     DiagnosticSeverity.Error, true, 0, false,
                     location: Location.Create(typeDeclarationSyntax.SyntaxTree, typeDeclarationSyntax.Identifier.Span)));
                 return;
@@ -47,7 +47,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
             //没有partial关键字抛错
             if (!isPartial)
             {
-                context.ReportDiagnostic(Diagnostic.Create("QUICRPC001", "QuicRpc", "Structural implementing IQuicRpcClient must have partital keyword.", DiagnosticSeverity.Error,
+                context.ReportDiagnostic(Diagnostic.Create("QUICRPC001", "QuicRpc", "实现IQuicRpcClient的结构体必须有partial关键字。", DiagnosticSeverity.Error,
                     DiagnosticSeverity.Error, true, 0, false,
                     location: Location.Create(typeDeclarationSyntax.SyntaxTree, typeDeclarationSyntax.Identifier.Span)));
                 return;
@@ -56,7 +56,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
             //必须有QuicRpcFunctionAttribute
             if (functionAttribute == null)
             {
-                context.ReportDiagnostic(Diagnostic.Create("QUICRPC002", "QuicRpc", "Structural implementing IQuicRpcClient must have a 'QuicRpcFunctionAttribute'.", DiagnosticSeverity.Error,
+                context.ReportDiagnostic(Diagnostic.Create("QUICRPC002", "QuicRpc", "实现IQuicRpcClient的结构体必须有'QuicRpcFunctionAttribute'特性。", DiagnosticSeverity.Error,
                     DiagnosticSeverity.Error, true, 0, false,
                     location: Location.Create(typeDeclarationSyntax.SyntaxTree, typeDeclarationSyntax.Identifier.Span)));
                 return;
@@ -76,21 +76,21 @@ namespace Wodsoft.QuicRpc.SourceGenerators
 
                     if (methodSyntax.Parameters.Length > 2)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC007", "QuicRpc", "QuicRpcClient function do not support more than two parameters.", DiagnosticSeverity.Error,
+                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC007", "QuicRpc", "QuicRpcClient服务方法不支持超过两个参数。", DiagnosticSeverity.Error,
                             DiagnosticSeverity.Error, true, 0, false,
                             location: Location.Create(typeDeclarationSyntax.SyntaxTree, methodSyntax.DeclaringSyntaxReferences[0].Span)));
                         continue;
                     }
                     if (methodSyntax.Parameters.Length == 2 && !SyntaxHelper.IsSameFullName(methodSyntax.Parameters[1].Type, "System.Threading.CancellationToken"))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC008", "QuicRpc", "If a QuicRpcClient function have two parameters, second parameter type must be \"CancellationToken\".", DiagnosticSeverity.Error,
+                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC008", "QuicRpc", "如果QuicRpcClient服务方法有两个参数，则第二个参数类型必须为\"CancellationToken\"。", DiagnosticSeverity.Error,
                             DiagnosticSeverity.Error, true, 0, false,
                             location: Location.Create(typeDeclarationSyntax.SyntaxTree, methodSyntax.DeclaringSyntaxReferences[0].Span)));
                         continue;
                     }
                     if (!SyntaxHelper.IsSameFullName(methodSyntax.ReturnType, "System.Threading.Tasks.Task"))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC009", "QuicRpc", "QuicRpcClient function return type must be 'Task' or 'Task<>'.", DiagnosticSeverity.Error,
+                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC009", "QuicRpc", "QuicRpcClient服务方法返回类型必须是'Task'或'Task<>'。", DiagnosticSeverity.Error,
                             DiagnosticSeverity.Error, true, 0, false,
                             location: Location.Create(typeDeclarationSyntax.SyntaxTree, methodSyntax.ReturnType.DeclaringSyntaxReferences[0].Span)));
                         continue;
@@ -101,14 +101,14 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                     {
                         if (methodSyntax.Parameters.Length != 0 && !SyntaxHelper.IsSameFullName(methodSyntax.Parameters[0].Type, "System.Threading.CancellationToken"))
                         {
-                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc streaming function parameter count must be empty or CancellationToken.", DiagnosticSeverity.Error,
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc流式服务方法的参数数量必须为空或为CancellationToken。", DiagnosticSeverity.Error,
                                 DiagnosticSeverity.Error, true, 0, false,
                                 location: Location.Create(typeDeclarationSyntax.SyntaxTree, methodSyntax.Parameters[0].DeclaringSyntaxReferences[0].Span)));
                             continue;
                         }
                         else if (methodSyntax.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) != "global::System.Threading.Tasks.Task<global::System.Net.Quic.QuicStream>")
                         {
-                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc streaming function return type must be Task<QuicStream>.", DiagnosticSeverity.Error,
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc流式服务方法返回类型必须是Task<QuicStream>。", DiagnosticSeverity.Error,
                                 DiagnosticSeverity.Error, true, 0, false,
                                 location: Location.Create(typeDeclarationSyntax.SyntaxTree, methodSyntax.ReturnType.DeclaringSyntaxReferences[0].Span)));
                             continue;
@@ -120,17 +120,37 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                     var functionId = (byte)functionAttribute.ConstructorArguments[0].Value!;
                     if (functions.ContainsKey(functionId))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC005", "QuicRpc", $"Function id \"{functionId}\" is used by {functions[functionId].Method.Name}.", DiagnosticSeverity.Error,
+                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC005", "QuicRpc", $"服务方法ID\"{functionId}\"已被{functions[functionId].Method.Name}使用。", DiagnosticSeverity.Error,
                             DiagnosticSeverity.Error, true, 0, false,
                             location: Location.Create(typeDeclarationSyntax.SyntaxTree, functionAttribute.ApplicationSyntaxReference!.Span)));
                         continue;
                     }
                     var parameter = methodSyntax.Parameters.FirstOrDefault();
                     var cancellationParameter = methodSyntax.Parameters.LastOrDefault();
-                    if (parameter != null && SyntaxHelper.IsSameFullName(parameter.Type, "System.Threading.CancellationToken"))
-                        parameter = null;
-                    if (cancellationParameter != null && !SyntaxHelper.IsSameFullName(cancellationParameter.Type, "System.Threading.CancellationToken"))
-                        cancellationParameter = null;
+                    if (parameter != null)
+                    {
+                        if (parameter.RefKind != RefKind.None)
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC010", "QuicRpc", "服务方法的参数不能带有关键字。", DiagnosticSeverity.Error,
+                                DiagnosticSeverity.Error, true, 0, false,
+                                location: Location.Create(typeDeclarationSyntax.SyntaxTree, parameter.DeclaringSyntaxReferences[0].Span)));
+                            continue;
+                        }
+                        if (SyntaxHelper.IsSameFullName(parameter.Type, "System.Threading.CancellationToken"))
+                            parameter = null;
+                    }
+                    if (cancellationParameter != null)
+                    {
+                        if (cancellationParameter.RefKind != RefKind.None)
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC010", "QuicRpc", "服务方法的参数不能带有关键字。", DiagnosticSeverity.Error,
+                                DiagnosticSeverity.Error, true, 0, false,
+                                location: Location.Create(typeDeclarationSyntax.SyntaxTree, cancellationParameter.DeclaringSyntaxReferences[0].Span)));
+                            continue;
+                        }
+                        if (!SyntaxHelper.IsSameFullName(cancellationParameter.Type, "System.Threading.CancellationToken"))
+                            cancellationParameter = null;
+                    }
                     functions.Add(functionId, new RpcFunction
                     {
                         ReturnType = isStreaming ? null : ((INamedTypeSymbol)methodSyntax.ReturnType).TypeArguments.FirstOrDefault(),

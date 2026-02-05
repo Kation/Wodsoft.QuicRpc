@@ -49,7 +49,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
             }
             if (classType.ContainingType != null)
             {
-                context.ReportDiagnostic(Diagnostic.Create("QUICRPC006", "QuicRpc", "Nested class do not support inherit QuicRpcFunctions.", DiagnosticSeverity.Error,
+                context.ReportDiagnostic(Diagnostic.Create("QUICRPC006", "QuicRpc", "嵌套的类不支持继承QuicRpcFunctions。", DiagnosticSeverity.Error,
                     DiagnosticSeverity.Error, true, 0, false,
                     location: Location.Create(classSyntax.SyntaxTree, classSyntax.Identifier.Span)));
                 return;
@@ -64,14 +64,14 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                     var returnType = model.GetTypeInfo(methodSyntax.ReturnType);
                     if (!SyntaxHelper.IsSameFullName(methodSyntax.ReturnType, "System.Threading.Tasks.ValueTask", model))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC003", "QuicRpc", "QuicRpc function return type must be 'ValueTask' or 'ValueTask<>'.", DiagnosticSeverity.Error,
+                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC003", "QuicRpc", "QuicRpc服务方法返回类型必须是'ValueTask'或'ValueTask<>'。", DiagnosticSeverity.Error,
                             DiagnosticSeverity.Error, true, 0, false,
                             location: Location.Create(methodSyntax.SyntaxTree, methodSyntax.ReturnType.Span)));
                         continue;
                     }
                     if (methodSyntax.ParameterList.Parameters.Count > 1)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc function parameter count must be zero or one.", DiagnosticSeverity.Error,
+                        context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc服务方法参数最多只能有一个。", DiagnosticSeverity.Error,
                             DiagnosticSeverity.Error, true, 0, false,
                             location: Location.Create(methodSyntax.SyntaxTree, methodSyntax.ParameterList.Span)));
                         continue;
@@ -86,7 +86,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
             //没有partial关键字抛错
             if (!isPartial)
             {
-                context.ReportDiagnostic(Diagnostic.Create("QUICRPC001", "QuicRpc", "Class inherited QuicRpcFunctions must have partital keyword or be an abstract class.", DiagnosticSeverity.Error,
+                context.ReportDiagnostic(Diagnostic.Create("QUICRPC001", "QuicRpc", "继承QuicRpcFunctions的类必须声明为partial或为抽象类。", DiagnosticSeverity.Error,
                     DiagnosticSeverity.Error, true, 0, false,
                     location: Location.Create(classSyntax.SyntaxTree, classSyntax.Identifier.Span)));
                 return;
@@ -95,7 +95,7 @@ namespace Wodsoft.QuicRpc.SourceGenerators
             //必须有QuicRpcFunctionAttribute
             if (functionAttribute == null)
             {
-                context.ReportDiagnostic(Diagnostic.Create("QUICRPC002", "QuicRpc", "Class inherited QuicRpcFunctions or its subclass must have a 'QuicRpcFunctionAttribute'.", DiagnosticSeverity.Error,
+                context.ReportDiagnostic(Diagnostic.Create("QUICRPC002", "QuicRpc", "继承QuicRpcFunctions的类或其子类必须具有'QuicRpcFunctionAttribute'特性。", DiagnosticSeverity.Error,
                     DiagnosticSeverity.Error, true, 0, false,
                     location: Location.Create(classSyntax.SyntaxTree, classSyntax.Identifier.Span)));
                 return;
@@ -116,13 +116,13 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                     {
                         if (methodSyntax.DeclaringSyntaxReferences[0].SyntaxTree == classSyntax.SyntaxTree)
                         {
-                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC005", "QuicRpc", $"Function id \"{functionId}\" is used by {functions[functionId].Method.Name}.", DiagnosticSeverity.Error,
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC005", "QuicRpc", $"服务方法ID\"{functionId}\"已被{functions[functionId].Method.Name}使用。", DiagnosticSeverity.Error,
                                 DiagnosticSeverity.Error, true, 0, false,
                                 location: Location.Create(classSyntax.SyntaxTree, functionAttribute.ApplicationSyntaxReference!.Span)));
                         }
                         else
                         {
-                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC005", "QuicRpc", $"Function \"{methodSyntax.Name}\" from base type \"{methodSyntax.ContainingType}\" using a custom id \"{functionId}\" is used by {functions[functionId].Method.Name}.", DiagnosticSeverity.Error,
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC005", "QuicRpc", $"服务方法\"{methodSyntax.Name}\"使用的ID\"{functionId}\"已被基类\"{methodSyntax.ContainingType}\"的{functions[functionId].Method.Name}使用了。", DiagnosticSeverity.Error,
                                 DiagnosticSeverity.Error, true, 0, false,
                                 location: Location.Create(classSyntax.SyntaxTree, functionAttribute.ApplicationSyntaxReference!.Span)));
                         }
@@ -133,14 +133,14 @@ namespace Wodsoft.QuicRpc.SourceGenerators
                     {
                         if (methodSyntax.Parameters.Length != 0)
                         {
-                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc streaming function parameter count must be zero.", DiagnosticSeverity.Error,
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc流式服务方法的参数必须为空。", DiagnosticSeverity.Error,
                                 DiagnosticSeverity.Error, true, 0, false,
                                 location: Location.Create(classSyntax.SyntaxTree, functionAttribute.ApplicationSyntaxReference!.Span)));
                             continue;
                         }
                         else if (methodSyntax.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) != "global::System.Threading.Tasks.ValueTask")
                         {
-                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc streaming function return type must be ValueTask.", DiagnosticSeverity.Error,
+                            context.ReportDiagnostic(Diagnostic.Create("QUICRPC004", "QuicRpc", "QuicRpc流式服务方法返回类型必须是ValueTask。", DiagnosticSeverity.Error,
                                 DiagnosticSeverity.Error, true, 0, false,
                                 location: Location.Create(classSyntax.SyntaxTree, functionAttribute.ApplicationSyntaxReference!.Span)));
                             continue;
