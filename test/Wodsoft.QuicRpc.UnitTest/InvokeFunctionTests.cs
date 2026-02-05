@@ -166,7 +166,7 @@ namespace Wodsoft.QuicRpc.UnitTest
                 var clientService = new QuicRpcService<TestRpcContext>();
                 var clientStream = await connectionContext.ClientConnection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, cts.Token);
 
-                await Assert.ThrowsAsync<QuicRpcException>(() => clientService.InvokeFunctionAsync<string>(clientStream, 1, "Quic").AsTask());
+                await Assert.ThrowsAsync<QuicRpcException>(() => clientService.InvokeFunctionAsync<string>(clientStream, 1, "Quic"));
 
                 await clientStream.DisposeAsync();
                 await cts.CancelAsync();

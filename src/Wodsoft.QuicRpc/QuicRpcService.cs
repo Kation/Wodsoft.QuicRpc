@@ -36,7 +36,7 @@ namespace Wodsoft.QuicRpc
         /// <param name="request">要发送的请求对象。</param>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>返回包含响应的异步任务。</returns>
-        public abstract ValueTask<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default);
+        public abstract Task<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步调用无请求但有响应的 Function。
@@ -46,7 +46,7 @@ namespace Wodsoft.QuicRpc
         /// <param name="functionId">要调用的服务方法的标识符。</param>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>返回包含响应的异步任务。</returns>
-        public abstract ValueTask<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
+        public abstract Task<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步调用带有请求但无响应的 Function。
@@ -57,7 +57,7 @@ namespace Wodsoft.QuicRpc
         /// <param name="request">要发送的请求对象。</param>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>返回表示操作完成的异步任务。</returns>
-        public abstract ValueTask InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default);
+        public abstract Task InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步调用无请求且无响应的 Function。
@@ -66,7 +66,7 @@ namespace Wodsoft.QuicRpc
         /// <param name="functionId">要调用的服务方法的标识符。</param>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>返回表示操作完成的异步任务。</returns>
-        public abstract ValueTask InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
+        public abstract Task InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 异步调用返回流式响应的 Function，成功时返回远端的 QuicStream 用于后续流式通信。
@@ -75,7 +75,7 @@ namespace Wodsoft.QuicRpc
         /// <param name="functionId">要调用的服务方法的标识符。</param>
         /// <param name="cancellationToken">取消令牌。</param>
         /// <returns>返回包含远端QuicStream的异步任务。</returns>
-        public abstract ValueTask<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
+        public abstract Task<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -226,7 +226,7 @@ namespace Wodsoft.QuicRpc
         }
 
         /// <inheritdoc/>
-        public override async ValueTask<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
+        public override async Task<TResponse> InvokeFunctionAsync<TRequest, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
@@ -283,7 +283,7 @@ namespace Wodsoft.QuicRpc
         }
 
         /// <inheritdoc/>
-        public override async ValueTask<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
+        public override async Task<TResponse> InvokeFunctionAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TResponse>(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
@@ -338,7 +338,7 @@ namespace Wodsoft.QuicRpc
         }
 
         /// <inheritdoc/>
-        public override async ValueTask InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
+        public override async Task InvokeFunctionAsync<TRequest>(QuicStream stream, ushort functionId, TRequest request, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
@@ -394,7 +394,7 @@ namespace Wodsoft.QuicRpc
         }
 
         /// <inheritdoc/>
-        public override async ValueTask InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
+        public override async Task InvokeFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
@@ -449,7 +449,7 @@ namespace Wodsoft.QuicRpc
         }
 
         /// <inheritdoc/>
-        public override async ValueTask<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
+        public override async Task<QuicStream> InvokeStreamingFunctionAsync(QuicStream stream, ushort functionId, CancellationToken cancellationToken = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(2);
             try
